@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { ArrowDown, ArrowRight, BookOpen, ChartNoAxesCombined, Check, CheckCircle2, ChevronDown, Cloud, Globe2, GraduationCap, Layers3, Lightbulb, ListChecks, ShieldCheck, Sparkles, Target, Trophy } from 'lucide-react';
 import { QuizView, ResultsView } from './QuizViews';
+import { StudyPlanner } from '../components/StudyPlanner';
+import { StudyBuddy } from '../components/StudyBuddy';
 import { domains, questions as bank, selectQuestions, loadHistory, historyKey } from './quizData';
 import type { AnswerRecord, Attempt, Question } from './quizData';
 
@@ -8,6 +10,7 @@ const domainIcons = [Cloud, Layers3, ShieldCheck];
 
 export default function Index() {
   const [screen, setScreen] = useState<'start' | 'quiz' | 'results'>('start');
+  const [activeTab, setActiveTab] = useState<'quiz' | 'planner'>('quiz');
   const [selectedDomain, setSelectedDomain] = useState('all');
   const [sessionDomain, setSessionDomain] = useState('all');
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -155,69 +158,94 @@ export default function Index() {
               </div>
             </section>
 
-            <section className="study-grid">
-              <div className="practice-panel">
-                <div className="panel-heading">
-                  <span className="small-icon purple"><Target size={21} /></span>
-                  <div>
-                    <h2>Ready when you are.</h2>
-                    <p>A small step today. More confidence tomorrow.</p>
-                  </div>
-                </div>
-                <label htmlFor="domain-select">What would you like to practice?</label>
-                <div className="start-form">
-                  <div className="select-wrap">
-                    <select id="domain-select" value={selectedDomain} onChange={e => setSelectedDomain(e.target.value)}>
-                      <option value="all">All domains — mixed practice</option>
-                      {domains.map(d => <option key={d.id} value={d.id}>{d.title}</option>)}
-                    </select>
-                    <ChevronDown size={17} />
-                  </div>
-                  <button className="primary-button" onClick={() => startQuiz()}>Start practice <ArrowRight size={17} /></button>
-                </div>
-                <div className="practice-notes">
-                  <span><ListChecks size={14} /> {questionCount} questions</span>
-                  <span><Lightbulb size={14} /> Instant explanations</span>
-                  <span>No timer, no pressure</span>
-                </div>
-                <div className="tip-box">
-                  <Lightbulb size={18} />
-                  <p><strong>A little tip:</strong> Start with all domains to discover your strengths, then focus on the areas that need a little more love.</p>
-                </div>
-              </div>
+            {/* The Tab Toggles */}
+            <div className="flex justify-center gap-3 my-8" id="study-section">
+              <button
+                onClick={() => setActiveTab('quiz')}
+                style={{ padding: '10px 20px', borderRadius: '12px', fontWeight: 600, fontSize: '14px', cursor: 'pointer', border: 'none', transition: 'all 0.2s', backgroundColor: activeTab === 'quiz' ? '#4f46e5' : '#f1f5f9', color: activeTab === 'quiz' ? 'white' : '#475569' }}
+              >
+                📝 Smart Practice
+              </button>
+              <button
+                onClick={() => setActiveTab('planner')}
+                style={{ padding: '10px 20px', borderRadius: '12px', fontWeight: 600, fontSize: '14px', cursor: 'pointer', border: 'none', transition: 'all 0.2s', backgroundColor: activeTab === 'planner' ? '#9333ea' : '#f1f5f9', color: activeTab === 'planner' ? 'white' : '#475569' }}
+              >
+                📅 Study Planner
+              </button>
+            </div>
 
-              <div className="progress-panel" id="progress">
-                <div className="progress-heading">
-                  <div>
-                    <span className="eyebrow">KEEP MOVING FORWARD</span>
-                    <h2>Your learning journey</h2>
+            {/* Render selected tab */}
+            {activeTab === 'planner' ? (
+              <StudyPlanner onStartQuiz={(domainId) => {
+                setSelectedDomain(domainId);
+                setActiveTab('quiz');
+                setTimeout(() => document.getElementById('study-section')?.scrollIntoView({ behavior: 'smooth' }), 50);
+              }} />
+            ) : (
+              <section className="study-grid">
+                <div className="practice-panel">
+                  <div className="panel-heading">
+                    <span className="small-icon purple"><Target size={21} /></span>
+                    <div>
+                      <h2>Ready when you are.</h2>
+                      <p>A small step today. More confidence tomorrow.</p>
+                    </div>
                   </div>
-                  <ChartNoAxesCombined size={24} />
-                </div>
-                <div className="progress-stats">
-                  <div>
-                    <strong>{history.length.toString().padStart(2, '0')}</strong>
-                    <span>Sessions completed</span>
+                  <label htmlFor="domain-select">What would you like to practice?</label>
+                  <div className="start-form">
+                    <div className="select-wrap">
+                      <select id="domain-select" value={selectedDomain} onChange={e => setSelectedDomain(e.target.value)}>
+                        <option value="all">All domains — mixed practice</option>
+                        {domains.map(d => <option key={d.id} value={d.id}>{d.title}</option>)}
+                      </select>
+                      <ChevronDown size={17} />
+                    </div>
+                    <button className="primary-button" onClick={() => startQuiz()}>Start practice <ArrowRight size={17} /></button>
                   </div>
-                  <div>
-                    <strong>{bestScore}<small>%</small></strong>
-                    <span>Best score</span>
+                  <div className="practice-notes">
+                    <span><ListChecks size={14} /> {questionCount} questions</span>
+                    <span><Lightbulb size={14} /> Instant explanations</span>
+                    <span>No timer, no pressure</span>
                   </div>
-                </div>
-                <div className="journey-caption">
-                  {history.length ? `${totalCorrect} correct answers across ${totalAnswered} questions. Keep it up!` : 'Your first session is the start of something good.'}
-                </div>
-                <div className="progress-divider" />
-                <div className="recent-progress">
-                  <span className="journey-icon"><Trophy size={21} /></span>
-                  <div>
-                    <strong>{recent ? `Last session: ${Math.round((recent.correct / recent.total) * 100)}% correct` : 'A fresh start. Endless possibilities.'}</strong>
-                    <p>{recent ? (recent.weakTopics.length ? `Next focus: ${recent.weakTopics.slice(0, 2).join(', ')}` : 'All answers correct. Nicely done!') : 'Complete a practice session to see your progress here.'}</p>
+                  <div className="tip-box">
+                    <Lightbulb size={18} />
+                    <p><strong>A little tip:</strong> Start with all domains to discover your strengths, then focus on the areas that need a little more love.</p>
                   </div>
                 </div>
-                <span className="local-note">Progress is saved on this browser. Just for you.</span>
-              </div>
-            </section>
+
+                <div className="progress-panel" id="progress">
+                  <div className="progress-heading">
+                    <div>
+                      <span className="eyebrow">KEEP MOVING FORWARD</span>
+                      <h2>Your learning journey</h2>
+                    </div>
+                    <ChartNoAxesCombined size={24} />
+                  </div>
+                  <div className="progress-stats">
+                    <div>
+                      <strong>{history.length.toString().padStart(2, '0')}</strong>
+                      <span>Sessions completed</span>
+                    </div>
+                    <div>
+                      <strong>{bestScore}<small>%</small></strong>
+                      <span>Best score</span>
+                    </div>
+                  </div>
+                  <div className="journey-caption">
+                    {history.length ? `${totalCorrect} correct answers across ${totalAnswered} questions. Keep it up!` : 'Your first session is the start of something good.'}
+                  </div>
+                  <div className="progress-divider" />
+                  <div className="recent-progress">
+                    <span className="journey-icon"><Trophy size={21} /></span>
+                    <div>
+                      <strong>{recent ? `Last session: ${Math.round((recent.correct / recent.total) * 100)}% correct` : 'A fresh start. Endless possibilities.'}</strong>
+                      <p>{recent ? (recent.weakTopics.length ? `Next focus: ${recent.weakTopics.slice(0, 2).join(', ')}` : 'All answers correct. Nicely done!') : 'Complete a practice session to see your progress here.'}</p>
+                    </div>
+                  </div>
+                  <span className="local-note">Progress is saved on this browser. Just for you.</span>
+                </div>
+              </section>
+            )}
 
             <div className="encouragement">
               <span className="small-icon"><Sparkles size={18} /></span>
@@ -246,6 +274,7 @@ export default function Index() {
           </div>
         </div>
       </footer>
+      <StudyBuddy />
     </div>
   );
 }
