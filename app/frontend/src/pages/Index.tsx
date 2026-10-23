@@ -140,7 +140,10 @@ export default function Index() {
                   const Icon = domainIcons[i];
                   const selected = selectedDomain === domain.id;
                   return (
-                    <button key={domain.id} aria-pressed={selected} className={`domain-card ${domain.color} ${selected ? 'selected' : ''}`} onClick={() => setSelectedDomain(domain.id)}>
+                    <button key={domain.id} aria-pressed={selected} className={`domain-card ${domain.color} ${selected ? 'selected' : ''}`} onClick={() => {
+                      setSelectedDomain(domain.id);
+                      document.getElementById('study-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }}>
                       <div className="domain-card-top">
                         <span className="domain-icon"><Icon size={25} /></span>
                         <span className="weight-pill">{domain.weight} of exam</span>
